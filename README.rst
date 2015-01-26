@@ -14,7 +14,7 @@ README
 Overview
 ========
 
-This package includes one module - ``flask-obfuscateids``.
+This package includes one module - ``flask_obfuscateids``.
 
 Tested against Python 2.7, 3.3, 3.4 & PyPy.
 
@@ -23,7 +23,8 @@ Getting Started
 
 .. code:: python
 
-	 >>> import flask-obfuscateids
+	 >>> from flask_obfuscateids import ObfuscateIDs
+	 >>>
 
 Installation
 ============
@@ -32,7 +33,7 @@ Installation
 
 Usage
 =====
-	``import flask-obfuscateids``
+	``import flask_obfuscateids``
 
 Features
 ========
