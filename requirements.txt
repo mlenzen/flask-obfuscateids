@@ -1,1 +1,1 @@
-setuptools
+-r requirements/package.txt

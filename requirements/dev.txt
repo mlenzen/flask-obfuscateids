@@ -1,5 +1,5 @@
--r requirements.txt
--r requirements/docs.txt
+-r package.txt
+-r docs.txt
 
 bumpversion
 coverage
