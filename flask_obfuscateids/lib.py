@@ -182,13 +182,19 @@ def deobfuscate(s, key, alphabet, num_check_chars=1):
 
 class Obfuscator():
 
-	def __init__(self, key, alphabet=None, min_length=0, num_check_chars=1):
+	def __init__(self, key, alphabet=None, min_length=0, num_check_chars=1, version=1):
 		'''
+
+		This accepts a version number in case the algorithm changes at some point
+		in the future.
+
 		Args:
 			key: The key.
 			alphabet: Optionally, specify an alternative alphabet to use.
-			min_length: An encoded value will always be at least min_length characters (including the check characters)
+			min_length: An encoded value will always be at least min_length
+				characters (including the check characters)
 			num_check_chars: The number of chars used for the check
+			version: The version of the algorithm to use.
 		'''
 		if isinstance(num_check_chars, int) and num_check_chars >= 0:
 			self.num_check_chars = num_check_chars

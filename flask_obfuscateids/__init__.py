@@ -85,7 +85,7 @@ class ObfuscateIDs():
 		app.config.setdefault('OBFUSCATE_IDS_MIN_LENGTH', 8)
 		app.config.setdefault('OBFUSCATE_IDS_ALPHABET', lib.ALPHANUM)
 		app.config.setdefault('OBFUSCATE_IDS_NUM_CHECK_CHARS', 1)
-		app.config.setdefault('OBFUSCATE_IDS_ALG_VER', 1)
+		app.config.setdefault('OBFUSCATE_IDS_ALGO_VERSION', 1)
 		# Use the newstyle teardown_appcontext if it's available,
 		# otherwise fall back to the request context
 		if hasattr(app, 'teardown_appcontext'):
@@ -93,31 +93,32 @@ class ObfuscateIDs():
 		else:
 			app.teardown_request(self.teardown)
 
-	def create_obfuscator(self):
-		return lib.Obfuscator(
-			key=current_app.config['OBFUSCATE_IDS_KEY'],
-			alphabet=current_app.config['OBFUSCATE_IDS_ALPHABET'],
-			min_length=current_app.config['OBFUSCATE_IDS_MIN_LENGTH'],
-			num_check_chars=current_app.config['OBFUSCATE_IDS_NUM_CHECK_CHARS'],
-			)
-
 	def teardown(self, exception):
 		pass
 
-	@property
-	def obfuscator(self):
-		ctx = stack.top
-		if ctx is not None:
-			if not hasattr(ctx, '_obfuscator'):
-				ctx._obfuscator = self.create_obfuscator()
-			return ctx._obfuscator
+	def obfuscate(self, num, salt=None, min_length=None):
+		return _current_obfuscator().obfuscate(num=num, salt=salt, min_length=min_length)
 
-	def obfuscate(self, id):
-		pass
+	def deobfuscate(self, s, salt=None):
+		return _current_obfuscator().deobfuscate(s=s, salt=salt)
+
+
+def _current_obfuscator():
+	ctx = stack.top
+	if ctx is not None:
+		if not hasattr(ctx, '_obfuscator'):
+			ctx._obfuscator = lib.Obfuscator(
+				key=current_app.config['OBFUSCATE_IDS_KEY'],
+				alphabet=current_app.config['OBFUSCATE_IDS_ALPHABET'],
+				min_length=current_app.config['OBFUSCATE_IDS_MIN_LENGTH'],
+				num_check_chars=current_app.config['OBFUSCATE_IDS_NUM_CHECK_CHARS'],
+				version=current_app.config['OBFUSCATE_IDS_ALGO_VERSION'],
+				)
+		return ctx._obfuscator
 
 
 class ModelMixin():
-	'''
+	'''Mixin for SQLAlchemy models.
 
 	Two class variables are in place to handle refactoring:
 	__obfuscate_ids_salt__ - by default, just use the class name
@@ -137,20 +138,20 @@ class ModelMixin():
 		return getattr(cls, '__obfuscate_ids_attr__', 'id')
 
 	@classmethod
-	def get_from_web_id(cls, web_id, or_abort=None):
-		'''Return the object corresponding to web_id.
+	def get_from_public_id(cls, public_id, or_abort=None):
+		'''Return the object corresponding to public_id.
 
-		If the web_id is malformed or there is no object with the deobfuscated id,
+		If the public_id is malformed or there is no object with the deobfuscated id,
 		the behavior depends on the or_abort parameter. If or_abort is None, then
 		None is returned. If not, flask.abort is called with or_abort as it's
 		argument (an HTTP status code).
 
 		Args:
-			web_id: The web_id of the object to get
+			public_id: The public_id of the object to get
 			or_abort: None or an int status code
 		'''
 		try:
-			ident = current_app.obfuscator.deobfuscate(web_id, salt=cls._obfuscate_ids_class_salt())
+			ident = _current_obfuscator().deobfuscate(public_id, salt=cls._obfuscate_ids_class_salt())
 		except ValueError:
 			obj = None
 		else:
@@ -161,6 +162,6 @@ class ModelMixin():
 			return obj
 
 	@property
-	def web_id(self):
+	def public_id(self):
 		ident_attr = getattr(self, self._obfuscate_ids_attr_name())
-		return current_app.obfuscator.obfuscate(ident_attr, salt=self._obfuscate_ids_class_salt())
+		return _current_obfuscator().obfuscate(ident_attr, salt=self._obfuscate_ids_class_salt())
