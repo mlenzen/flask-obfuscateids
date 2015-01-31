@@ -2,8 +2,14 @@
 import contextlib
 import random
 
+from collections_extended import setlist
+
 # The version of seeding to use for random
 SEED_VERSION = 2
+
+# Common alphabets to use
+ALPHANUM = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
 
 @contextlib.contextmanager
@@ -195,3 +201,43 @@ def deobfuscate(s, key, alphabet, num_check_chars=1):
 	decrypted_ints = decrypt(encrypted_ints, key, base)
 	num_as_ints = eval_check_digits(decrypted_ints, base, num_check_chars)
 	return decode_base_n(num_as_ints, base)
+
+
+class Obfuscator():
+
+	def __init__(self, key, alphabet=None, min_length=0, num_check_chars=1):
+		'''
+		Args:
+			key: The key.
+			alphabet: Optionally, specify an alternative alphabet to use.
+			min_length: An encoded value will always be at least min_length characters (including the check characters)
+			num_check_chars: The number of chars used for the check
+		'''
+		if isinstance(num_check_chars, int) and num_check_chars >= 0:
+			self.num_check_chars = num_check_chars
+		else:
+			raise ValueError('num_check_chars must be an int >= 0')
+		if isinstance(min_length, int) and min_length >= 0:
+			self.min_length = min_length - num_check_chars
+		else:
+			raise ValueError('min_length must be an int >= 0')
+		self.key = key
+		alphabet = list(alphabet or ALPHANUM)
+		shuffle(key, alphabet)
+		self.alphabet = setlist(alphabet)
+
+	def obfuscate(self, num, salt=None, min_length=None):
+		if salt:
+			key = self.key + salt
+		else:
+			key = self.key
+		if min_length is None:
+			min_length = self.min_length
+		return obfuscate(num, key, self.alphabet, min_length, self.num_check_chars)
+
+	def deobfuscate(self, s, salt=None):
+		if salt:
+			key = self.key + salt
+		else:
+			key = self.key
+		return deobfuscate(s, key, self.alphabet, self.num_check_chars)

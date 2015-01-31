@@ -9,8 +9,7 @@ import random
 
 import pytest
 
-from flask_obfuscateids import Obfuscator, ALPHANUM
-from flask_obfuscateids.lib import encode_base_n, decode_base_n, shuffle, key_gen
+from flask_obfuscateids.lib import encode_base_n, decode_base_n, shuffle, key_gen, Obfuscator, ALPHANUM
 
 
 def test_reflexivity():
