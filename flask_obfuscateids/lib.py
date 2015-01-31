@@ -1,6 +1,5 @@
 
-import contextlib
-import random
+from random import Random
 
 from collections_extended import setlist
 
@@ -12,27 +11,9 @@ ALPHANUM = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 
 
-@contextlib.contextmanager
-def preserve_state():
-	'''Preserve the state of random.'''
-	prev_state = random.getstate()
-	yield
-	random.setstate(prev_state)
-
-
-@contextlib.contextmanager
-def reseed(key):
-	'''Reseed random so that is will output the same output each time then
-	restore random to it's previous state.
-	'''
-	with preserve_state():
-		random.seed(key, version=SEED_VERSION)
-		yield
-
-
 def shuffle(key, x):
-	with reseed(key):
-		random.shuffle(x)
+	random = Random(key)
+	random.shuffle(x)
 
 
 def key_gen(key, base):
@@ -42,13 +23,9 @@ def key_gen(key, base):
 	the same each time for a given key. This turns a key of any length into an
 	"infinitely" long key without simply cycling over the key.
 	'''
-	with reseed(key):
-		state = random.getstate()
+	random = Random(key)
 	while True:
-		with preserve_state():
-			random.setstate(state)
-			value = random.randint(0, base-1)
-			state = random.getstate()
+		value = random.randint(0, base-1)
 		yield value
 
 
